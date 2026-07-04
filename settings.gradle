@@ -1,0 +1,7 @@
+rootProject.name = 'connectrpc-spring-boot'
+
+include 'module:connectrpc-spring-boot'
+include 'starter:connectrpc-spring-boot-starter'
+
+project(':module:connectrpc-spring-boot').projectDir = file('module/connectrpc-spring-boot')
+project(':starter:connectrpc-spring-boot-starter').projectDir = file('starter/connectrpc-spring-boot-starter')

@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+description = 'Starter for serving the Connect protocol (connectrpc.com) from existing gRPC service definitions'
+
+dependencies {
+    api project(':module:connectrpc-spring-boot')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}
