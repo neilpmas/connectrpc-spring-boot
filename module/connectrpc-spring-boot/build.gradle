@@ -28,7 +28,7 @@ dependencyManagement {
 }
 
 dependencies {
-    api 'dev.neilmason:connectrpc-spring:0.1.0-SNAPSHOT'
+    api 'dev.neilmason:connectrpc-spring-core:0.1.0-SNAPSHOT'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
