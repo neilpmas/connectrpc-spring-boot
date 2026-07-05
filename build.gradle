@@ -1,5 +1,13 @@
+import io.spring.javaformat.gradle.tasks.CheckFormat
+import io.spring.javaformat.gradle.tasks.Format
+
 plugins {
     id 'io.spring.dependency-management' version '1.1.7' apply false
+    // Versions verified as a compatible pair from spring-projects/spring-boot's own
+    // gradle.properties (javaFormatVersion / checkstyleToolVersion), not just latest-of-each,
+    // since spring-javaformat-checkstyle wraps specific Checkstyle APIs that can break across
+    // major Checkstyle versions.
+    id 'io.spring.javaformat' version '0.0.47' apply false
 }
 
 allprojects {
@@ -9,5 +17,38 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'checkstyle'
+    apply plugin: 'io.spring.javaformat'
+
+    checkstyle {
+        toolVersion = '10.12.4'
+    }
+
+    dependencies {
+        checkstyle 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.47'
+    }
+
+    // Generated protobuf sources aren't hand-written code -- don't format/lint them, matching
+    // spring-projects/spring-boot's own build (JavaConventions.excludeGeneratedSources). A plain
+    // glob like '**/generated/**' can't match here: the generated directory itself is registered
+    // as a whole source root, so "generated" only ever appears in the root, never in the relative
+    // path Gradle matches excludes against -- hence checking the absolute path directly, same as
+    // spring-boot's own isGeneratedSource().
+    def isGeneratedSource = { fileTreeElement ->
+        def path = fileTreeElement.file.path.replace(File.separator, '/')
+        path.contains('/generated/source/') || path.contains('/generated-source/')
+    }
+    tasks.withType(CheckFormat).configureEach {
+        exclude isGeneratedSource
+    }
+    tasks.withType(Format).configureEach {
+        exclude isGeneratedSource
+    }
+    tasks.withType(Checkstyle).configureEach {
+        exclude isGeneratedSource
     }
 }

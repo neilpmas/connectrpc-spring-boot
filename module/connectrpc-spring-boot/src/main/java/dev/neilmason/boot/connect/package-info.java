@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-package dev.neilmason.boot.connect.testapp;
-
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class TestApplication {
-
-}
+/**
+ * Spring Boot autoconfiguration for connectrpc-spring.
+ */
+package dev.neilmason.boot.connect;

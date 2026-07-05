@@ -1,1 +1,3 @@
 dev.neilmason.boot.connect.ConnectAutoConfiguration
+dev.neilmason.boot.connect.ConnectObservationAutoConfiguration
+dev.neilmason.boot.connect.ConnectHealthAutoConfiguration

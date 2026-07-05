@@ -16,38 +16,30 @@
 
 package dev.neilmason.boot.connect;
 
-import java.util.List;
-
-import dev.neilmason.connect.ConnectFilter;
-import dev.neilmason.connect.ConnectServiceRegistry;
 import io.grpc.BindableService;
+import io.grpc.protobuf.services.HealthStatusManager;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 @AutoConfiguration
-@EnableConfigurationProperties(ConnectProperties.class)
-@ConditionalOnClass(BindableService.class)
-@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
-@ConditionalOnProperty(prefix = "connect", name = "enabled", havingValue = "true", matchIfMissing = true)
-public class ConnectAutoConfiguration {
+@ConditionalOnClass({ BindableService.class, HealthStatusManager.class })
+@ConditionalOnProperty(prefix = "connect", name = "health.enabled", havingValue = "true", matchIfMissing = true)
+public class ConnectHealthAutoConfiguration {
 
-	@Bean
+	@Bean(destroyMethod = "enterTerminalState")
 	@ConditionalOnMissingBean
-	public ConnectServiceRegistry connectServiceRegistry(List<BindableService> services) {
-		return new ConnectServiceRegistry(services);
+	public HealthStatusManager connectHealthStatusManager() {
+		return new HealthStatusManager();
 	}
 
 	@Bean
-	@ConditionalOnMissingBean
-	public ConnectFilter connectFilter(ConnectServiceRegistry registry, ConnectProperties properties) {
-		return new ConnectFilter(registry, properties.getPathPrefix(), properties.getMaxMessageSize().toBytes(),
-				properties.isCorsEnabled(), properties.getCorsAllowedOrigins());
+	@ConditionalOnMissingBean(name = "connectHealthService")
+	public BindableService connectHealthService(HealthStatusManager healthStatusManager) {
+		return healthStatusManager.getHealthService();
 	}
 
 }
