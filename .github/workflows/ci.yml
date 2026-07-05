@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: connectrpc-spring-boot
+
+      # connectrpc-spring-boot depends on connectrpc-spring-core via mavenLocal(), not a
+      # published artifact -- see phase-archive.md Phase 3.5 -- so CI has to build and
+      # install the core first, same as the local dev workflow.
+      - uses: actions/checkout@v7
+        with:
+          repository: neilpmas/connectrpc-spring
+          path: connectrpc-spring
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+          cache: 'maven'
+
+      - name: Install connectrpc-spring-core to the local Maven repository
+        working-directory: connectrpc-spring
+        run: ./mvnw --batch-mode clean install -DskipTests
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test
+        working-directory: connectrpc-spring-boot
+        run: ./gradlew build
