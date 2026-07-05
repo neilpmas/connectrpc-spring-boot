@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'io.spring.dependency-management'
-    id 'com.google.protobuf' version '0.9.4'
+    id 'com.google.protobuf' version '0.10.0'
 }
 
 description = 'Test support for connectrpc-spring-boot'

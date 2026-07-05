@@ -33,14 +33,15 @@ subprojects {
     }
 
     // Generated protobuf sources aren't hand-written code -- don't format/lint them, matching
-    // spring-projects/spring-boot's own build (JavaConventions.excludeGeneratedSources). A plain
-    // glob like '**/generated/**' can't match here: the generated directory itself is registered
-    // as a whole source root, so "generated" only ever appears in the root, never in the relative
-    // path Gradle matches excludes against -- hence checking the absolute path directly, same as
-    // spring-boot's own isGeneratedSource().
+    // spring-projects/spring-boot's own build (JavaConventions.isGeneratedSource(), verified
+    // directly against reference-spring-boot/buildSrc: it checks "/generated/sources/", plural,
+    // not singular -- copied verbatim here rather than guessed). A plain glob like
+    // '**/generated/**' can't match here: the generated directory itself is registered as a whole
+    // source root, so "generated" only ever appears in the root, never in the relative path
+    // Gradle matches excludes against -- hence checking the absolute path directly.
     def isGeneratedSource = { fileTreeElement ->
         def path = fileTreeElement.file.path.replace(File.separator, '/')
-        path.contains('/generated/source/') || path.contains('/generated-source/')
+        path.contains('/generated/sources/') || path.contains('/generated-source/')
     }
     tasks.withType(CheckFormat).configureEach {
         exclude isGeneratedSource
