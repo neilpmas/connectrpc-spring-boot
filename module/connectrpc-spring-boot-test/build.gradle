@@ -1,0 +1,74 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'io.spring.dependency-management'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+description = 'Test support for connectrpc-spring-boot'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(24)
+    }
+}
+
+ext {
+    springBootVersion = '4.1.0'
+    grpcVersion = '1.82.1'
+    protobufVersion = '4.35.1'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        mavenBom "io.grpc:grpc-bom:${grpcVersion}"
+        mavenBom "com.google.protobuf:protobuf-bom:${protobufVersion}"
+    }
+}
+
+dependencies {
+    api project(':module:connectrpc-spring-boot')
+    api 'org.springframework.boot:spring-boot-webtestclient'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+    implementation 'com.google.protobuf:protobuf-java'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
+    testImplementation 'io.grpc:grpc-protobuf'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        ofSourceSet('test').forEach { task ->
+            task.plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('processTestResources', Copy) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}

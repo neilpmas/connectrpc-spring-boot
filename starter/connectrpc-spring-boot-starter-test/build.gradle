@@ -1,0 +1,18 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+description = 'Starter for testing connectrpc-spring-boot applications'
+
+dependencies {
+    api project(':module:connectrpc-spring-boot-test')
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+        }
+    }
+}
