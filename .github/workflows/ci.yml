@@ -33,7 +33,7 @@ jobs:
         working-directory: connectrpc-spring
         run: ./mvnw --batch-mode clean install -DskipTests
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Build and test
         working-directory: connectrpc-spring-boot
