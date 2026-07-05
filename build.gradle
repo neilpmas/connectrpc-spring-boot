@@ -2,12 +2,12 @@ import io.spring.javaformat.gradle.tasks.CheckFormat
 import io.spring.javaformat.gradle.tasks.Format
 
 plugins {
-    id 'io.spring.dependency-management' version '1.1.7' apply false
-    // Versions verified as a compatible pair from spring-projects/spring-boot's own
-    // gradle.properties (javaFormatVersion / checkstyleToolVersion), not just latest-of-each,
-    // since spring-javaformat-checkstyle wraps specific Checkstyle APIs that can break across
-    // major Checkstyle versions.
-    id 'io.spring.javaformat' version '0.0.47' apply false
+    id 'io.spring.dependency-management' version "${dependencyManagementVersion}" apply false
+    // javaFormatVersion/checkstyleToolVersion in gradle.properties are verified as a
+    // compatible pair from spring-projects/spring-boot's own gradle.properties, not just
+    // latest-of-each, since spring-javaformat-checkstyle wraps specific Checkstyle APIs that
+    // can break across major Checkstyle versions.
+    id 'io.spring.javaformat' version "${javaFormatVersion}" apply false
 }
 
 allprojects {
@@ -25,11 +25,11 @@ subprojects {
     apply plugin: 'io.spring.javaformat'
 
     checkstyle {
-        toolVersion = '10.12.4'
+        toolVersion = "${checkstyleToolVersion}"
     }
 
     dependencies {
-        checkstyle 'io.spring.javaformat:spring-javaformat-checkstyle:0.0.47'
+        checkstyle "io.spring.javaformat:spring-javaformat-checkstyle:${javaFormatVersion}"
     }
 
     // Generated protobuf sources aren't hand-written code -- don't format/lint them, matching
