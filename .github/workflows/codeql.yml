@@ -1,0 +1,51 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 8 * * 1'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: connectrpc-spring-boot
+
+      # Same reason as ci.yml: connectrpc-spring-core is only available via mavenLocal(),
+      # so it has to be built and installed before connectrpc-spring-boot can be compiled
+      # for analysis.
+      - uses: actions/checkout@v7
+        with:
+          repository: neilpmas/connectrpc-spring
+          path: connectrpc-spring
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+          cache: 'maven'
+
+      - name: Install connectrpc-spring-core to the local Maven repository
+        working-directory: connectrpc-spring
+        run: ./mvnw --batch-mode clean install -DskipTests
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: java-kotlin
+          source-root: connectrpc-spring-boot
+
+      - name: Build
+        working-directory: connectrpc-spring-boot
+        run: ./gradlew compileJava compileTestJava -x test
+
+      - uses: github/codeql-action/analyze@v4
