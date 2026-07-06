@@ -37,7 +37,7 @@ jobs:
         working-directory: connectrpc-spring
         run: ./mvnw --batch-mode clean install -DskipTests
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - uses: github/codeql-action/init@v4
         with:
