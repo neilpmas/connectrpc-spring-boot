@@ -5,6 +5,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # javaFormatVersion/checkstyleToolVersion in gradle.properties are a
+      # manually-verified compatible pair (see the build.gradle comment) --
+      # same reasoning as connectrpc-spring's dependabot.yml, kept in sync here.
+      - dependency-name: "com.puppycrawl.tools:checkstyle"
+      - dependency-name: "io.spring.javaformat:spring-javaformat-checkstyle"
+      - dependency-name: "io.spring.javaformat"
 
   - package-ecosystem: github-actions
     directory: /
