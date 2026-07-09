@@ -22,7 +22,10 @@ dependencyManagement {
 }
 
 dependencies {
-    api 'dev.neilmason:connectrpc-spring-core:0.1.0-SNAPSHOT'
+    // Overridable for real releases (Phase 5.2): ./gradlew publish -PcoreVersion=0.2.0, once
+    // that exact connectrpc-spring-core version is actually published to GitHub Packages.
+    // Defaults to the existing mavenLocal()-resolved SNAPSHOT for the everyday dev loop.
+    api "dev.neilmason:connectrpc-spring-core:${findProperty('coreVersion') ?: '0.1.0-SNAPSHOT'}"
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'io.micrometer:micrometer-core'
     implementation 'io.grpc:grpc-services'
