@@ -1,0 +1,50 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 0.2.0)'
+        required: true
+      core_version:
+        description: 'Already-published connectrpc-spring-core version to depend on (e.g. 0.2.0)'
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: connectrpc-spring-boot
+
+      # Same reason as ci.yml/codeql.yml: connectrpc-spring-core is compiled against here via
+      # mavenLocal(), independent of the already-published core_version this build will declare
+      # as its dependency (see the coreVersion comment in module/connectrpc-spring-boot/build.gradle).
+      - uses: actions/checkout@v7
+        with:
+          repository: neilpmas/connectrpc-spring
+          path: connectrpc-spring
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '24'
+          cache: 'maven'
+
+      - name: Install connectrpc-spring-core to the local Maven repository
+        working-directory: connectrpc-spring
+        run: ./mvnw --batch-mode clean install -DskipTests
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Publish to GitHub Packages
+        working-directory: connectrpc-spring-boot
+        run: ./gradlew publish -PpublishVersion=${{ inputs.version }} -PcoreVersion=${{ inputs.core_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
