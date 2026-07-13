@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -61,6 +62,29 @@ class ConnectTestClientAutoConfigurationTests {
 				ConnectCodec.JSON);
 
 		assertThat(response.getGreeting()).isEqualTo("Hello, JSON!");
+	}
+
+	@Test
+	void webTestClient_returnsTheSameAutoconfiguredInstance() {
+		assertThat(this.connectTestClient.webTestClient()).isSameAs(this.webTestClient);
+	}
+
+	@Test
+	void mutateWith_returnsAnIndependentClientThatStillWorks() {
+		WebTestClientConfigurer addHeader = (builder, httpHandlerBuilder, connector) -> builder
+			.defaultHeader("X-Test-Mutation", "applied");
+
+		ConnectTestClient mutated = this.connectTestClient.mutateWith(addHeader);
+		assertThat(mutated).isNotSameAs(this.connectTestClient);
+
+		SayHelloRequest request = SayHelloRequest.newBuilder().setName("Mutated").build();
+
+		SayHelloResponse mutatedResponse = mutated.call(GreetServiceGrpc.getSayHelloMethod(), request);
+		assertThat(mutatedResponse.getGreeting()).isEqualTo("Hello, Mutated!");
+
+		// The original client is unaffected by the mutation -- still works normally.
+		SayHelloResponse originalResponse = this.connectTestClient.call(GreetServiceGrpc.getSayHelloMethod(), request);
+		assertThat(originalResponse.getGreeting()).isEqualTo("Hello, Mutated!");
 	}
 
 	@SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK,

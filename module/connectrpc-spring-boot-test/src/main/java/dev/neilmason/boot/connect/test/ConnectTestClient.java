@@ -26,6 +26,7 @@ import com.google.protobuf.util.JsonFormat;
 import io.grpc.MethodDescriptor;
 
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
 import org.springframework.util.Assert;
 
 public class ConnectTestClient {
@@ -39,6 +40,23 @@ public class ConnectTestClient {
 		this.pathPrefix = pathPrefix.endsWith("/") ? pathPrefix : pathPrefix + "/";
 	}
 
+	public WebTestClient webTestClient() {
+		return this.webTestClient;
+	}
+
+	// Mirrors WebTestClient's own mutateWith(WebTestClientConfigurer) exactly -- same
+	// parameter type, same "returns an independent copy" contract -- so per-call
+	// authentication (e.g. SecurityMockServerConfigurers.mockJwt(), which implements this
+	// interface) composes the same way callers already expect from raw WebTestClient.
+	public ConnectTestClient mutateWith(WebTestClientConfigurer configurer) {
+		return new ConnectTestClient(this.webTestClient.mutateWith(configurer), this.pathPrefix);
+	}
+
+	// call(...) only handles the 2xx happy path -- a non-2xx response fails the
+	// underlying
+	// WebTestClient assertion directly rather than returning something inspectable. Use
+	// webTestClient() to assert Connect protocol error responses (4xx/5xx, JSON body)
+	// directly.
 	public <ReqT, RespT> RespT call(MethodDescriptor<ReqT, RespT> method, ReqT request) {
 		return call(method, request, ConnectCodec.PROTO);
 	}
