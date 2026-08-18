@@ -26,6 +26,25 @@ import java.lang.annotation.Target;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
 
+// To compose a Spring Security test configurer such as
+// org.springframework.security.test.web.reactive.server.SecurityMockServerConfigurers#springSecurity()
+// into the autoconfigured WebTestClient/ConnectTestClient, register it as a
+// org.springframework.test.web.reactive.server.MockServerConfigurer bean rather than trying to
+// "apply" it directly -- Spring Boot's own WebTestClientAutoConfiguration.webTestClient(...)
+// collects every MockServerConfigurer bean and applies each one via MockServerSpec.apply(...)
+// before this annotation's autoconfiguration ever sees the resulting client:
+//
+// @TestConfiguration(proxyBeanMethods = false)
+// static class SecurityTestConfig {
+// @Bean
+// MockServerConfigurer springSecurityConfigurer() {
+// return SecurityMockServerConfigurers.springSecurity();
+// }
+// }
+//
+// With that in place, per-call authentication composes normally through
+// ConnectTestClient#mutateWith(WebTestClientConfigurer), e.g.
+// connectTestClient.mutateWith(SecurityMockServerConfigurers.mockJwt().jwt(...)).call(...).
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

@@ -20,11 +20,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import io.grpc.MethodDescriptor;
 
+import org.springframework.boot.json.JsonParserFactory;
+import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
 import org.springframework.util.Assert;
@@ -52,11 +55,10 @@ public class ConnectTestClient {
 		return new ConnectTestClient(this.webTestClient.mutateWith(configurer), this.pathPrefix);
 	}
 
-	// call(...) only handles the 2xx happy path -- a non-2xx response fails the
-	// underlying
-	// WebTestClient assertion directly rather than returning something inspectable. Use
-	// webTestClient() to assert Connect protocol error responses (4xx/5xx, JSON body)
-	// directly.
+	// call(...) only handles the 2xx happy path -- use callExpectingError(...) to assert
+	// a
+	// Connect protocol error response instead, or webTestClient() directly for anything
+	// neither covers.
 	public <ReqT, RespT> RespT call(MethodDescriptor<ReqT, RespT> method, ReqT request) {
 		return call(method, request, ConnectCodec.PROTO);
 	}
@@ -75,6 +77,33 @@ public class ConnectTestClient {
 			.getResponseBody();
 		Assert.state(responseBytes != null, "No response body");
 		return unmarshalResponse(method, responseBytes, codec);
+	}
+
+	// Connect protocol errors are always a JSON body ({"code":"...","message":"..."}),
+	// independent of the request codec, and can be either 4xx or 5xx (e.g. "internal"/
+	// "unavailable" map to 500/503) -- so this doesn't restrict which non-2xx status is
+	// acceptable the way call() restricts success to exactly 200.
+	public <ReqT, RespT> ConnectError callExpectingError(MethodDescriptor<ReqT, RespT> method, ReqT request) {
+		return callExpectingError(method, request, ConnectCodec.PROTO);
+	}
+
+	public <ReqT, RespT> ConnectError callExpectingError(MethodDescriptor<ReqT, RespT> method, ReqT request,
+			ConnectCodec codec) {
+		byte[] requestBytes = marshalRequest(method, request, codec);
+		EntityExchangeResult<byte[]> result = this.webTestClient.post()
+			.uri(this.pathPrefix + method.getFullMethodName())
+			.contentType(codec.mediaType())
+			.bodyValue(requestBytes)
+			.exchange()
+			.expectBody(byte[].class)
+			.returnResult();
+		Assert.state(!result.getStatus().is2xxSuccessful(),
+				() -> "Expected a Connect protocol error response, but got " + result.getStatus());
+		byte[] responseBytes = result.getResponseBody();
+		Assert.state(responseBytes != null, "No response body");
+		Map<String, Object> body = JsonParserFactory.getJsonParser()
+			.parseMap(new String(responseBytes, StandardCharsets.UTF_8));
+		return new ConnectError((String) body.get("code"), (String) body.get("message"));
 	}
 
 	private <ReqT, RespT> byte[] marshalRequest(MethodDescriptor<ReqT, RespT> method, ReqT request,
