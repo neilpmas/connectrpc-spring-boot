@@ -20,6 +20,7 @@ import dev.neilmason.boot.connect.test.testapp.TestApplication;
 import dev.neilmason.boot.connect.test.testapp.greet.v1.GreetServiceGrpc;
 import dev.neilmason.boot.connect.test.testapp.greet.v1.SayHelloRequest;
 import dev.neilmason.boot.connect.test.testapp.greet.v1.SayHelloResponse;
+import io.grpc.MethodDescriptor;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureConnectTestClient
@@ -71,8 +73,7 @@ class ConnectTestClientAutoConfigurationTests {
 
 	@Test
 	void mutateWith_returnsAnIndependentClientThatStillWorks() {
-		WebTestClientConfigurer addHeader = (builder, httpHandlerBuilder, connector) -> builder
-			.defaultHeader("X-Test-Mutation", "applied");
+		WebTestClientConfigurer addHeader = (builder, _, _) -> builder.defaultHeader("X-Test-Mutation", "applied");
 
 		ConnectTestClient mutated = this.connectTestClient.mutateWith(addHeader);
 		assertThat(mutated).isNotSameAs(this.connectTestClient);
@@ -85,6 +86,34 @@ class ConnectTestClientAutoConfigurationTests {
 		// The original client is unaffected by the mutation -- still works normally.
 		SayHelloResponse originalResponse = this.connectTestClient.call(GreetServiceGrpc.getSayHelloMethod(), request);
 		assertThat(originalResponse.getGreeting()).isEqualTo("Hello, Mutated!");
+	}
+
+	@Test
+	void callExpectingError_returnsParsedConnectError() {
+		// Reuses the real method's marshallers, just points at a full method name nothing
+		// registers -- ConnectServiceRegistry#lookup() returns null, ConnectFilter maps
+		// that
+		// to a real "unimplemented" Connect error.
+		MethodDescriptor<SayHelloRequest, SayHelloResponse> unknownMethod = GreetServiceGrpc.getSayHelloMethod()
+			.toBuilder()
+			.setFullMethodName("greet.v1.GreetService/UnknownMethod")
+			.build();
+		SayHelloRequest request = SayHelloRequest.newBuilder().setName("World").build();
+
+		ConnectError error = this.connectTestClient.callExpectingError(unknownMethod, request);
+
+		assertThat(error.code()).isEqualTo("unimplemented");
+		assertThat(error.message()).contains("Method not found");
+	}
+
+	@Test
+	void callExpectingError_failsClearlyWhenTheCallActuallySucceeds() {
+		SayHelloRequest request = SayHelloRequest.newBuilder().setName("World").build();
+
+		assertThatThrownBy(
+				() -> this.connectTestClient.callExpectingError(GreetServiceGrpc.getSayHelloMethod(), request))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("Expected a Connect protocol error response");
 	}
 
 	@SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK,
