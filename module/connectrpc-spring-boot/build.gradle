@@ -13,6 +13,14 @@ java {
     }
 }
 
+// Matches Spring Boot's own RUNTIME_JAVA_VERSION baseline (JavaConventions.java in the
+// spring-boot build) -- the toolchain above is just the JDK this repo builds with, not the
+// bytecode target consumers need. Without this, the toolchain's languageVersion silently
+// becomes the release target too, producing artifacts unusable below Java 24.
+compileJava {
+    options.release = 17
+}
+
 dependencyManagement {
     imports {
         mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
