@@ -27,6 +27,7 @@ import com.google.protobuf.util.JsonFormat;
 import io.grpc.MethodDescriptor;
 
 import org.springframework.boot.json.JsonParserFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
@@ -99,11 +100,18 @@ public class ConnectTestClient {
 			.returnResult();
 		Assert.state(!result.getStatus().is2xxSuccessful(),
 				() -> "Expected a Connect protocol error response, but got " + result.getStatus());
+		HttpStatus httpStatus = HttpStatus.valueOf(result.getStatus().value());
 		byte[] responseBytes = result.getResponseBody();
-		Assert.state(responseBytes != null, "No response body");
+		// A request rejected before it ever reaches ConnectFilter (e.g. Spring Security's
+		// own entry point returning a bare 401) has no Connect JSON error body to parse
+		// --
+		// that's a normal, expected outcome, not a marshalling failure.
+		if (responseBytes == null || responseBytes.length == 0) {
+			return new ConnectError(httpStatus, null, null);
+		}
 		Map<String, Object> body = JsonParserFactory.getJsonParser()
 			.parseMap(new String(responseBytes, StandardCharsets.UTF_8));
-		return new ConnectError((String) body.get("code"), (String) body.get("message"));
+		return new ConnectError(httpStatus, (String) body.get("code"), (String) body.get("message"));
 	}
 
 	private <ReqT, RespT> byte[] marshalRequest(MethodDescriptor<ReqT, RespT> method, ReqT request,

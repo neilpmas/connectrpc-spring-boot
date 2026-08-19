@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -72,6 +73,22 @@ class ConnectTestClientSecurityCompositionTests {
 			.exchange()
 			.expectStatus()
 			.isUnauthorized();
+	}
+
+	// Reproduces https://github.com/neilmason/connectrpc-spring-boot/issues/15: an
+	// unauthenticated request never reaches ConnectFilter at all -- it's rejected by
+	// Spring
+	// Security's own entry point at the security filter chain, a bare 401 with no body,
+	// since there's no Connect JSON error to produce.
+	@Test
+	void callExpectingError_handlesUnauthenticatedRejectionWithNoBody() {
+		SayHelloRequest request = SayHelloRequest.newBuilder().setName("Secured").build();
+
+		ConnectError error = this.connectTestClient.callExpectingError(GreetServiceGrpc.getSayHelloMethod(), request);
+
+		assertThat(error.httpStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		assertThat(error.code()).isNull();
+		assertThat(error.message()).isNull();
 	}
 
 	@TestConfiguration(proxyBeanMethods = false)
