@@ -30,12 +30,11 @@ dependencyManagement {
 }
 
 dependencies {
-    // Always compiled/tested against the mavenLocal()-resolved SNAPSHOT, in CI and locally
-    // alike -- resolving the real released coreVersion here would need connectrpc-spring-boot's
-    // CI to read a *different* repo's GitHub Packages, which the automatic GITHUB_TOKEN can't
-    // do (it's scoped to this repo only). The published POM's declared version is corrected
-    // separately, below, without needing a cross-repo read at build time.
-    api 'dev.neilmason:connectrpc-spring-core:0.1.0-SNAPSHOT'
+    // A real, resolvable version now that connectrpc-spring-core is genuinely published to
+    // Maven Central (task-connectrpc-spring-boot-starter Phase 8) -- no more mavenLocal()
+    // workaround, no more cross-repo checkout-and-install in CI, since Central needs no auth
+    // to read (unlike the GitHub Packages stopgap this replaces).
+    api 'dev.neilmason:connectrpc-spring-core:0.1.1'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'io.micrometer:micrometer-core'
     implementation 'io.grpc:grpc-services'
@@ -71,28 +70,4 @@ tasks.named('test') {
 
 tasks.named('processTestResources', Copy) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-
-            // Overridable for real releases (Phase 5.2): ./gradlew publish -PcoreVersion=0.2.0,
-            // once that exact connectrpc-spring-core version is actually published to GitHub
-            // Packages. Rewrites only the *published* POM's declared dependency version --
-            // compilation above always uses the mavenLocal() SNAPSHOT, so this never needs a
-            // cross-repo read during the build itself.
-            pom.withXml {
-                def coreVersion = project.findProperty('coreVersion')
-                if (coreVersion) {
-                    asNode().dependencies.dependency.findAll {
-                        it.artifactId.text() == 'connectrpc-spring-core'
-                    }.each {
-                        it.version[0].value = coreVersion
-                    }
-                }
-            }
-        }
-    }
 }

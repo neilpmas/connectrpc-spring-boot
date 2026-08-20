@@ -1,5 +1,8 @@
 import io.spring.javaformat.gradle.tasks.CheckFormat
 import io.spring.javaformat.gradle.tasks.Format
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.SourcesJar
 
 plugins {
     id 'io.spring.dependency-management' version "${dependencyManagementVersion}" apply false
@@ -8,6 +11,10 @@ plugins {
     // latest-of-each, since spring-javaformat-checkstyle wraps specific Checkstyle APIs that
     // can break across major Checkstyle versions.
     id 'io.spring.javaformat' version "${javaFormatVersion}" apply false
+    // Not Sonatype-official (unlike connectrpc-spring's central-publishing-maven-plugin), but
+    // the real de facto Gradle standard for Central Portal publishing -- handles GPG signing
+    // and Central upload in one step (task-connectrpc-spring-boot-starter Phase 8).
+    id 'com.vanniktech.maven.publish' version "${vanniktechMavenPublishVersion}" apply false
 }
 
 allprojects {
@@ -68,6 +75,44 @@ subprojects {
                         username = System.getenv('GITHUB_ACTOR')
                         password = System.getenv('GITHUB_TOKEN')
                     }
+                }
+            }
+        }
+
+        // Real Maven Central publish (Phase 8), alongside the GitHub Packages stopgap above --
+        // both stay live for one release cycle after this lands, until every consumer has
+        // migrated. Metadata shared across every module here; name/description come from each
+        // module's own project.name/description.
+        apply plugin: 'com.vanniktech.maven.publish'
+        mavenPublishing {
+            publishToMavenCentral()
+            signAllPublications()
+            // Real javadoc (matching connectrpc-spring's maven-javadoc-plugin), not the
+            // plugin's default placeholder jar.
+            configure(new JavaLibrary(new JavadocJar.Javadoc(), new SourcesJar.Sources()))
+            pom {
+                name.set(project.name)
+                description.set(project.description)
+                url.set('https://github.com/neilpmas/connectrpc-spring-boot')
+                licenses {
+                    license {
+                        name.set('Apache License, Version 2.0')
+                        url.set('https://www.apache.org/licenses/LICENSE-2.0.txt')
+                        distribution.set('https://www.apache.org/licenses/LICENSE-2.0.txt')
+                    }
+                }
+                developers {
+                    developer {
+                        id.set('neilpmas')
+                        name.set('Neil Mason')
+                        email.set('neilpmas@gmail.com')
+                        url.set('https://github.com/neilpmas')
+                    }
+                }
+                scm {
+                    url.set('https://github.com/neilpmas/connectrpc-spring-boot')
+                    connection.set('scm:git:https://github.com/neilpmas/connectrpc-spring-boot.git')
+                    developerConnection.set('scm:git:ssh://git@github.com/neilpmas/connectrpc-spring-boot.git')
                 }
             }
         }

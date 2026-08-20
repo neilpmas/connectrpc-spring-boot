@@ -70,11 +70,3 @@ tasks.named('test') {
 tasks.named('processTestResources', Copy) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
-        }
-    }
-}
