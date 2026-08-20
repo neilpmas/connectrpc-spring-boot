@@ -85,14 +85,22 @@ subprojects {
         // module's own project.name/description.
         apply plugin: 'com.vanniktech.maven.publish'
         mavenPublishing {
-            publishToMavenCentral()
+            // true = auto-publish once validation passes, matching connectrpc-spring's
+            // autoPublish=true -- the default is USER_MANAGED, which just uploads and waits
+            // for a manual click in the Central Portal UI.
+            publishToMavenCentral(true)
             signAllPublications()
             // Real javadoc (matching connectrpc-spring's maven-javadoc-plugin), not the
             // plugin's default placeholder jar.
             configure(new JavaLibrary(new JavadocJar.Javadoc(), new SourcesJar.Sources()))
             pom {
                 name.set(project.name)
-                description.set(project.description)
+                // Lazy on purpose: subprojects {} here runs before each module's own
+                // build.gradle sets its `description`, so an eager project.description read
+                // captures null -- Central rejected a real publish over exactly this
+                // (deployment 4daa1d57-5bd8-444a-989a-9b8bd2295632, "Project description is
+                // missing").
+                description.set(project.provider { project.description })
                 url.set('https://github.com/neilpmas/connectrpc-spring-boot')
                 licenses {
                     license {
