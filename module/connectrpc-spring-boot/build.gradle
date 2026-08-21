@@ -34,7 +34,7 @@ dependencies {
     // Maven Central (task-connectrpc-spring-boot-starter Phase 8) -- no more mavenLocal()
     // workaround, no more cross-repo checkout-and-install in CI, since Central needs no auth
     // to read (unlike the GitHub Packages stopgap this replaces).
-    api 'dev.neilmason:connectrpc-spring-core:0.1.1'
+    api 'dev.neilmason:connectrpc-spring-core:0.1.2'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'io.micrometer:micrometer-core'
     implementation 'io.grpc:grpc-services'
