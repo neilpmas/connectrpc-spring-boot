@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v7
@@ -25,14 +24,12 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      # Publishes to both GitHub Packages and Maven Central (task-connectrpc-spring-boot-starter
-      # Phase 8) -- both stay live for one release cycle after this lands, until every consumer
-      # has migrated off GitHub Packages.
-      - name: Publish to GitHub Packages and Maven Central
+      # Publishes to Maven Central (task-connectrpc-spring-boot-starter Phase 8). GitHub
+      # Packages (the Phase 5.2 dogfooding stopgap) retired in Phase 8.5 once both known
+      # consumers had migrated off it.
+      - name: Publish to Maven Central
         run: ./gradlew publish -PpublishVersion=${{ inputs.version }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_PASSPHRASE }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.CENTRAL_TOKEN_USERNAME }}

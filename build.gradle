@@ -62,27 +62,13 @@ subprojects {
         exclude isGeneratedSource
     }
 
-    // Stopgap for dogfooding (Phase 5.2) -- GitHub Packages, not Maven Central yet. See
-    // connectrpc-spring's pom.xml for the same reasoning. Credentials come from the publish
-    // workflow's environment (GITHUB_ACTOR/GITHUB_TOKEN), not needed for the everyday build.
+    // Real Maven Central publish (Phase 8). GitHub Packages (the Phase 5.2 dogfooding
+    // stopgap) retired in Phase 8.5 once both known consumers had migrated off it --
+    // vanniktech's plugin registers its own Central repository under publishing.repositories,
+    // so the `publish` task needs no explicit repository config here any more. Metadata shared
+    // across every module here; name/description come from each module's own
+    // project.name/description.
     pluginManager.withPlugin('maven-publish') {
-        publishing {
-            repositories {
-                maven {
-                    name = 'GitHubPackages'
-                    url = uri('https://maven.pkg.github.com/neilpmas/connectrpc-spring-boot')
-                    credentials {
-                        username = System.getenv('GITHUB_ACTOR')
-                        password = System.getenv('GITHUB_TOKEN')
-                    }
-                }
-            }
-        }
-
-        // Real Maven Central publish (Phase 8), alongside the GitHub Packages stopgap above --
-        // both stay live for one release cycle after this lands, until every consumer has
-        // migrated. Metadata shared across every module here; name/description come from each
-        // module's own project.name/description.
         apply plugin: 'com.vanniktech.maven.publish'
         mavenPublishing {
             // true = auto-publish once validation passes, matching connectrpc-spring's
