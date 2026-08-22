@@ -21,17 +21,38 @@ import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.unit.DataSize;
 
+/**
+ * {@link ConfigurationProperties Properties} for serving the Connect protocol.
+ *
+ * @author Neil Mason
+ */
 @ConfigurationProperties("connect")
 public class ConnectProperties {
 
+	/**
+	 * Whether to serve the Connect protocol.
+	 */
 	private boolean enabled = true;
 
+	/**
+	 * Path prefix Connect requests are served under.
+	 */
 	private String pathPrefix = "/connect";
 
+	/**
+	 * Maximum accepted request body size.
+	 */
 	private DataSize maxMessageSize = DataSize.ofMegabytes(4);
 
+	/**
+	 * Whether to handle CORS preflight requests and set Access-Control-Allow-Origin on
+	 * responses.
+	 */
 	private boolean corsEnabled = true;
 
+	/**
+	 * Allowed CORS origins. "*" allows any origin.
+	 */
 	private List<String> corsAllowedOrigins = List.of("*");
 
 	public boolean isEnabled() {

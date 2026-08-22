@@ -25,6 +25,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration
+ * Auto-configuration} that exposes the standard {@code grpc.health.v1.Health} service
+ * over Connect, backed by {@link HealthStatusManager}.
+ *
+ * @author Neil Mason
+ */
 @AutoConfiguration
 @ConditionalOnClass({ BindableService.class, HealthStatusManager.class })
 @ConditionalOnProperty(prefix = "connect", name = "health.enabled", havingValue = "true", matchIfMissing = true)

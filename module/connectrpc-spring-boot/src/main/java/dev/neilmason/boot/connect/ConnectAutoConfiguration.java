@@ -30,6 +30,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+/**
+ * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration
+ * Auto-configuration} for serving the Connect protocol from every {@link BindableService}
+ * bean in the application context, on a reactive (WebFlux) web application.
+ *
+ * @author Neil Mason
+ */
 @AutoConfiguration
 @EnableConfigurationProperties(ConnectProperties.class)
 @ConditionalOnClass(BindableService.class)

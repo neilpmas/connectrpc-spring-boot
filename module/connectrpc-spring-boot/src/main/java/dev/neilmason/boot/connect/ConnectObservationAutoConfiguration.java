@@ -31,6 +31,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
 
+/**
+ * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration
+ * Auto-configuration} for instrumenting Connect protocol dispatch with Micrometer, by
+ * registering {@link ObservationGrpcServerInterceptor} as a
+ * {@link GlobalConnectInterceptor}.
+ *
+ * @author Neil Mason
+ */
 @AutoConfiguration
 @ConditionalOnClass({ BindableService.class, ObservationRegistry.class, ObservationGrpcServerInterceptor.class })
 @ConditionalOnBean(ObservationRegistry.class)

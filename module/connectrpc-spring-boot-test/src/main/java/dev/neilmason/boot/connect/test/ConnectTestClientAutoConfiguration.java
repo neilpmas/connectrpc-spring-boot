@@ -27,6 +27,14 @@ import org.springframework.boot.webtestclient.autoconfigure.WebTestClientAutoCon
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+/**
+ * {@link org.springframework.boot.autoconfigure.EnableAutoConfiguration
+ * Auto-configuration} for a {@link ConnectTestClient} bean, wrapping the autoconfigured
+ * {@link WebTestClient}. Imported via {@link AutoConfigureConnectTestClient} rather than
+ * applied directly.
+ *
+ * @author Neil Mason
+ */
 @AutoConfiguration(after = WebTestClientAutoConfiguration.class)
 @ConditionalOnClass(WebTestClient.class)
 @ConditionalOnBean(WebTestClient.class)
