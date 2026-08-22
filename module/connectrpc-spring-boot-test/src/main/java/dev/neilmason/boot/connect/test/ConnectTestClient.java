@@ -33,37 +33,76 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
 import org.springframework.util.Assert;
 
+/**
+ * Calls a Connect protocol endpoint in tests via {@link WebTestClient}, marshalling
+ * requests and responses through a generated stub's {@link MethodDescriptor} directly,
+ * rather than requiring per-message-type test code.
+ *
+ * @author Neil Mason
+ */
 public class ConnectTestClient {
 
 	private final WebTestClient webTestClient;
 
 	private final String pathPrefix;
 
+	/**
+	 * Creates a client wrapping {@code webTestClient}.
+	 * @param webTestClient the client to issue requests through
+	 * @param pathPrefix the path prefix Connect requests are served under, e.g.
+	 * {@code /connect}
+	 */
 	public ConnectTestClient(WebTestClient webTestClient, String pathPrefix) {
 		this.webTestClient = webTestClient;
 		this.pathPrefix = pathPrefix.endsWith("/") ? pathPrefix : pathPrefix + "/";
 	}
 
+	/**
+	 * Returns the underlying {@link WebTestClient}, for assertions neither {@link #call}
+	 * nor {@link #callExpectingError} covers.
+	 * @return the underlying client
+	 */
 	public WebTestClient webTestClient() {
 		return this.webTestClient;
 	}
 
-	// Mirrors WebTestClient's own mutateWith(WebTestClientConfigurer) exactly -- same
-	// parameter type, same "returns an independent copy" contract -- so per-call
-	// authentication (e.g. SecurityMockServerConfigurers.mockJwt(), which implements this
-	// interface) composes the same way callers already expect from raw WebTestClient.
+	/**
+	 * Returns a new client with {@code configurer} applied, leaving this client
+	 * unmodified. Mirrors {@link WebTestClient#mutateWith(WebTestClientConfigurer)}
+	 * exactly -- same parameter type, same "returns an independent copy" contract -- so
+	 * per-call authentication (e.g. {@code SecurityMockServerConfigurers.mockJwt()},
+	 * which implements this interface) composes the same way callers already expect from
+	 * raw {@link WebTestClient}.
+	 * @param configurer the configurer to apply
+	 * @return a new, independently configured client
+	 */
 	public ConnectTestClient mutateWith(WebTestClientConfigurer configurer) {
 		return new ConnectTestClient(this.webTestClient.mutateWith(configurer), this.pathPrefix);
 	}
 
-	// call(...) only handles the 2xx happy path -- use callExpectingError(...) to assert
-	// a
-	// Connect protocol error response instead, or webTestClient() directly for anything
-	// neither covers.
+	/**
+	 * Calls {@code method} with a protobuf-encoded request, asserting a 2xx response.
+	 * @param <ReqT> the request message type
+	 * @param <RespT> the response message type
+	 * @param method the method to call
+	 * @param request the request message
+	 * @return the response message
+	 */
 	public <ReqT, RespT> RespT call(MethodDescriptor<ReqT, RespT> method, ReqT request) {
 		return call(method, request, ConnectCodec.PROTO);
 	}
 
+	/**
+	 * Calls {@code method}, asserting a 2xx response. Only handles the happy path -- use
+	 * {@link #callExpectingError} to assert a Connect protocol error response instead, or
+	 * {@link #webTestClient()} directly for anything neither covers.
+	 * @param <ReqT> the request message type
+	 * @param <RespT> the response message type
+	 * @param method the method to call
+	 * @param request the request message
+	 * @param codec the wire codec to marshal the request and response with
+	 * @return the response message
+	 */
 	public <ReqT, RespT> RespT call(MethodDescriptor<ReqT, RespT> method, ReqT request, ConnectCodec codec) {
 		byte[] requestBytes = marshalRequest(method, request, codec);
 		byte[] responseBytes = this.webTestClient.post()
@@ -80,14 +119,33 @@ public class ConnectTestClient {
 		return unmarshalResponse(method, responseBytes, codec);
 	}
 
-	// Connect protocol errors are always a JSON body ({"code":"...","message":"..."}),
-	// independent of the request codec, and can be either 4xx or 5xx (e.g. "internal"/
-	// "unavailable" map to 500/503) -- so this doesn't restrict which non-2xx status is
-	// acceptable the way call() restricts success to exactly 200.
+	/**
+	 * Calls {@code method} with a protobuf-encoded request, asserting a non-2xx response
+	 * and parsing it as a Connect protocol error.
+	 * @param <ReqT> the request message type
+	 * @param <RespT> the response message type
+	 * @param method the method to call
+	 * @param request the request message
+	 * @return the parsed error response
+	 */
 	public <ReqT, RespT> ConnectError callExpectingError(MethodDescriptor<ReqT, RespT> method, ReqT request) {
 		return callExpectingError(method, request, ConnectCodec.PROTO);
 	}
 
+	/**
+	 * Calls {@code method}, asserting a non-2xx response and parsing it as a Connect
+	 * protocol error. Connect protocol errors are always a JSON body
+	 * ({@code {"code":"...","message":"..."}}), independent of the request codec, and can
+	 * be either 4xx or 5xx (e.g. {@code internal}/{@code unavailable} map to 500/503) --
+	 * so this doesn't restrict which non-2xx status is acceptable the way {@link #call}
+	 * restricts success to exactly 200.
+	 * @param <ReqT> the request message type
+	 * @param <RespT> the response message type
+	 * @param method the method to call
+	 * @param request the request message
+	 * @param codec the wire codec to marshal the request with
+	 * @return the parsed error response
+	 */
 	public <ReqT, RespT> ConnectError callExpectingError(MethodDescriptor<ReqT, RespT> method, ReqT request,
 			ConnectCodec codec) {
 		byte[] requestBytes = marshalRequest(method, request, codec);

@@ -18,10 +18,18 @@ package dev.neilmason.boot.connect.test;
 
 import org.springframework.http.HttpStatus;
 
-// A parsed Connect protocol error response body, as returned by
-// ConnectTestClient#callExpectingError. httpStatus is always populated; code/message are null
-// when the request was rejected before it ever reached the Connect protocol layer (e.g. a
-// security filter chain 401 with no body), since there's no Connect JSON error to parse.
+/**
+ * A parsed Connect protocol error response body, as returned by
+ * {@link ConnectTestClient#callExpectingError}.
+ *
+ * @param httpStatus the response's HTTP status; always populated
+ * @param code the Connect protocol error code, or {@code null} if the request was
+ * rejected before it ever reached the Connect protocol layer (e.g. a security filter
+ * chain 401 with no body), since there's no Connect JSON error to parse
+ * @param message the Connect protocol error message, or {@code null} under the same
+ * condition as {@code code}
+ * @author Neil Mason
+ */
 public record ConnectError(HttpStatus httpStatus, String code, String message) {
 
 }

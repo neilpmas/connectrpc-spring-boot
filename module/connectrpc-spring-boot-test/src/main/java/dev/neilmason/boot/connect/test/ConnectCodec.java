@@ -18,6 +18,11 @@ package dev.neilmason.boot.connect.test;
 
 import org.springframework.http.MediaType;
 
+/**
+ * The wire codec a {@link ConnectTestClient} call is marshalled with.
+ *
+ * @author Neil Mason
+ */
 public enum ConnectCodec {
 
 	/**
