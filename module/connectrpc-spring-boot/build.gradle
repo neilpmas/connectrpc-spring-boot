@@ -39,6 +39,13 @@ dependencies {
     implementation 'io.micrometer:micrometer-core'
     implementation 'io.grpc:grpc-services'
 
+    // Generates META-INF/spring-configuration-metadata.json for ConnectProperties at compile
+    // time -- without it, IDEs have no way to know connect.* keys are real, so every one of
+    // them (enabled, path-prefix, max-message-size, cors-enabled, cors-allowed-origins) gets
+    // flagged as an unresolvable property even though they all work at runtime. Fixes
+    // connectrpc-spring-boot#22, found while dogfooding in todo-app-backend.
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
     testImplementation 'com.google.protobuf:protobuf-java'
